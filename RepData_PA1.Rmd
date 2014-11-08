@@ -1,0 +1,244 @@
+---
+title: "RepData_PeerAssessment1"
+author: "Nelson Brown"
+date: "Tuesday, November 04, 2014"
+output: html_document
+---
+
+###Project Description  
+
+Sign into GitHub using my credentials
+
+fork https://GithUb.com/rdpeng/RepData_PeerAssessment1 to my account
+
+Create local repository for the project
+
+mkdir "c\\Coursera\\Repdata_PeerAssessment1"
+
+git remote https://github.com/NelsonBrown/RepData_PeerAssessment1
+
+Open new file RepData_PA1.Rmd in RStudio
+
+Set working Directory to local repository directory
+
+```{r}
+setwd("C:/Coursera/RepData_PeerAssessment1")
+```
+
+Extract activity.zip to current directory creating activity.csv  
+
+Read activity.csv into activity data frame
+
+```{r, echo=TRUE}
+activity <- read.csv("activity.csv")
+summary(activity)  
+```
+
+###As we can see from the summary there are 2304 step values missing
+
+Load ggplot2 library
+
+```{r, echo=TRUE}
+library(ggplot2)
+```
+
+Plot histogram of daily activity steps removing the missing data
+
+```{r, echo=TRUE}
+dailySteps <- aggregate(activity$steps, by=list(date=activity$date), FUN=sum, na.rm=TRUE)
+colnames(dailySteps)[2] <- "steps"
+qplot(steps, data = dailySteps, geom = "histogram", main = "Histogram of Daily Totals with missing data ignored", )
+```
+
+Calculate and plot Daily mean totals of steps removing the missing data
+  
+```{r, echo=TRUE}
+
+dailyMeanSteps <- aggregate(activity$steps, by=list(date=activity$date), FUN=mean, na.rm=TRUE)
+
+colnames(dailyMeanSteps)[2] <- "steps"
+
+
+p <- qplot(date, steps, data = dailyMeanSteps, main = "Mean Daily Totals with missing data ignored", geom = c("point"), method = "lm", ylab="Step Total", xlab="Interval" )
+
+p1 <- p + theme(
+        axis.title.x = element_text(color="forestgreen", vjust=-0.35),
+        axis.title.y = element_text(color="cadetblue" , vjust=0.35),   
+        axis.text.x=element_text(angle=60, size=6, vjust=0.5)
+)
+
+p1
+```
+
+Calculate and plot Daily Median totals of steps removing the missing data
+  
+```{r, echo=TRUE}
+
+dailyMedianSteps <- aggregate(activity$steps, by=list(date=activity$date), FUN=median, na.rm=TRUE)
+
+colnames(dailyMedianSteps)[2] <- "steps"
+
+p <- qplot(date, steps, data =dailyMedianSteps, main = "Median Daily Totals with missing data ignored", geom = "point", ylab="Steps", xlab="Interval")
+
+p1 <- p + theme(
+        axis.title.x = element_text(color="forestgreen", vjust=-0.35),
+        axis.title.y = element_text(color="cadetblue" , vjust=0.35),   
+        axis.text.x=element_text(angle=60, size=6, vjust=0.5)
+)
+
+p1
+```
+
+Calculate the average steps per interval period removing the missing data
+
+```{r, echo=TRUE}
+
+intervalSteps <- aggregate(activity$steps, by=list(interval=activity$interval), FUN=mean, na.rm=TRUE)
+
+colnames(intervalSteps)[2] <- "steps"
+
+ p <- qplot(interval, label = NULL, steps, data = intervalSteps, geom = "line", type = "1", main = "Daily Interval Totals with missing data ignored", ylab="Total Steps", xlab="By Interval")
+ 
+ p1 <- p + theme(
+          axis.ticks = element_blank(),
+          axis.text.x = element_blank(),
+          axis.title.x = element_text(color="forestgreen", vjust=-0.35),
+          axis.title.y = element_text(color="cadetblue" , vjust=0.35),   
+          axis.text.x=element_text(angle=60, size=6, vjust=0.5)
+  )
+ p1
+```  
+
+Fill in missing values with the mean steps value for a given interval  
+
+```{r, echo=TRUE}
+
+require(plyr)
+require(Hmisc)
+
+newactivity <- ddply(activity, "interval", mutate, steps = impute(steps, mean))
+
+newactivity <- newactivity[order(newactivity$date,newactivity$interval),]
+summary(newactivity)
+```
+
+Make the date value a factor
+
+```{r, echo=TRUE}
+newactivity$date <- as.factor(newactivity$date)
+```
+
+Plot histogram of daily activity steps with missing data filled in with generated data
+
+```{r, echo=TRUE}
+dailySteps <- aggregate(newactivity$steps, by=list(date=newactivity$date), FUN=sum)
+
+colnames(dailySteps)[2] <- "steps"
+
+qplot(steps, data = dailySteps, geom = "histogram", main = "Histogram of Daily Totals with No missing data", )
+```
+
+Calculate and plot mean daily totals of steps with the missing data filled in 
+
+```{r, echo=TRUE}
+
+dailyMeanSteps <- aggregate(activity$steps, by=list(date=activity$date), FUN=mean)
+
+colnames(dailyMeanSteps)[2] <- "steps"
+
+
+p <- qplot(date, steps, data = dailyMeanSteps, main = "Mean Daily Totals with no missing data", geom = "point", method = "lm", ylab="Daily Mean Steps", )
+
+p1 <- p + theme(
+        axis.title.x = element_text(color="forestgreen", vjust=-0.35),
+        axis.title.y = element_text(color="cadetblue" , vjust=0.35),   
+        axis.text.x=element_text(angle=60, size=6, vjust=0.5)
+)
+
+p1
+````
+
+
+Calculate and plot median daily totals of steps with the missing data filled in 
+
+```{r, echo=TRUE}
+
+ dailySMedianteps <- aggregate(newactivity$steps, by=list(date=newactivity$date), FUN=median)
+ 
+ colnames(dailyMedianSteps)[2] <- "steps"
+ 
+ p <- qplot(date, steps, data = dailyMedianSteps, main = "Median Daily Totals with no missing data", geom = "point", method = "lm", ylab="Daily Median Steps", )
+ 
+ p1 <- p + theme(
+         axis.title.x = element_text(color="forestgreen", vjust=-0.35),
+         axis.title.y = element_text(color="cadetblue" , vjust=0.35),   
+         axis.text.x=element_text(angle=60, size=6, vjust=0.5)
+ )
+ p1
+```
+
+Calculate interval steps mean with the missing data filled in
+
+```{r, echo=TRUE}
+
+intervalSteps <- aggregate(newactivity$steps, by=list(interval=newactivity$interval), FUN=mean)
+
+colnames(intervalSteps)[2] <- "steps"
+
+ p <- qplot(interval, label = NULL, steps, data = intervalSteps, geom + "line", type = "1", ylab="Steps", main = "Daily Interval Totals with no missing data", xlab="Interval", )
+ 
+ p1 <- p + theme(
+          axis.ticks = element_blank(),
+          axis.text.x = element_blank(),
+          axis.title.x = element_text(color="forestgreen", vjust=-0.35),
+          axis.title.y = element_text(color="cadetblue" , vjust=0.35),   
+          axis.text.x=element_text(angle=60, size=6, vjust=0.5)
+  )
+ p1
+```
+
+Add a column to the data frame specifying the day of the week
+ Monday thru Sunday
+ Convert Monday thru Friday to weekpart == "weekday"
+ Convert Saturday and Sunday to "Weekend"
+
+```{r, echo=TRUE}
+newactivity$weekpart <- weekdays(as.Date(newactivity$date))
+head(newactivity)
+newactivity$weekpart[newactivity$weekpart=="Monday"] <- "weekday"
+newactivity$weekpart[newactivity$weekpart=="Tuesday"] <- "weekday"
+newactivity$weekpart[newactivity$weekpart=="Wednesday"] <- "weekday"
+newactivity$weekpart[newactivity$weekpart=="Thursday"] <- "weekday"
+newactivity$weekpart[newactivity$weekpart=="Friday"] <- "weekday"
+newactivity$weekpart[newactivity$weekpart=="Saturday"] <- "weekend"
+newactivity$weekpart[newactivity$weekpart=="Sunday"] <- "weekend"
+newactivity$weekpart <- as.factor(newactivity$weekpart)
+head(newactivity,10)
+```
+
+Plot the Weekend vs weekday activity
+
+```{r, echo=TRUE}
+
+par(mfrow = c(2,1),mfcol=c(2,1))
+
+weekSteps <- aggregate(steps ~ interval + weekpart, newactivity, mean)
+
+p <- qplot(interval, steps, data = weekSteps, ylab="Number of Steps", geom = "line", type ="l", facets = weekpart ~ .)
+p1 <- p + theme(
+                axis.title.x = element_text(color="forestgreen", vjust=-0.35),
+                axis.title.y = element_text(color="cadetblue" , vjust=0.35),   
+                axis.text.x=element_text(angle=50, size=8, vjust=0.5)
+                )
+p1
+```  
+  
+load knitr library and invoke knit2html() to create md and html files 
+
+```{r, echo=TRUE}
+library(knitr)
+
+knit2html("C:/Coursera/RepData_PeerAssessment1/RepData_Pa1.Rmd")  
+```  
+
+ 
